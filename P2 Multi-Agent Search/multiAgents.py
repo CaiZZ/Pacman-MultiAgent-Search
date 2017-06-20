@@ -190,8 +190,65 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         """
           Returns the minimax action using self.depth and self.evaluationFunction
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        numGhosts = gameState.getNumAgents() - 1
+	return self.max_value(gameState, 1, numGhosts, float("-inf"), float("inf"))
+        
+    def max_value(self, gameState, depth, numGhosts, alpha, beta):
+	"""
+	  Maxmizing function alpha-beta pruning
+	"""
+	# Game over
+	if gameState.isWin() or gameState.isLose():
+	    return self.evaluationFunction(gameState)
+	max_val = float("-inf")
+	# successor is action (TOP, DOWN, LEFT, RIGHT)
+	best_action = Directions.STOP
+        for action in gameState.getLegalActions(0):
+	    successor = gameState.generateSuccessor(0, action)
+	    tempVal = self.min_value(successor, depth, 1, numGhosts, alpha, beta)
+	    if tempVal > max_val:
+		max_val = tempVal
+		best_action = action
+
+            # pruning
+            if max_val > beta:
+                return max_val
+            alpha = max(alpha, max_val)
+	# depth = 1 return action, otherwise return max_val
+	if depth == 1:
+	    return best_action
+	else:
+	    return max_val
+
+    def min_value(self, gameState, depth, agentIndex, numGhosts, alpha, beta):
+	"""
+	  Minimizing function with alpha pruning
+	"""
+	# Game over
+	if gameState.isWin() or gameState.isLose():
+	    return self.evaluationFunction(gameState)
+	min_val = float("inf")
+        for action in gameState.getLegalActions(agentIndex):
+            successor = gameState.generateSuccessor(agentIndex, action)
+            # last ghost agent
+            if agentIndex == numGhosts:
+                # depth not over, move to pacman max layer
+                if depth < self.depth:
+                    tempVal = self.max_value(successor, depth + 1, numGhosts, alpha, beta)
+                # depth over, return evaluation value
+                else:
+                    tempVal = self.evaluationFunction(successor)
+            # next ghost min layer
+            else:
+                tempVal = self.min_value(successor, depth, agentIndex + 1, numGhosts, alpha, beta)
+            if tempVal < alpha:
+                min_val = tempVal
+
+            # pruning
+            if min_val < alpha:
+                return min_val
+            beta = min(beta, min_val)
+        return min_val
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
@@ -205,8 +262,57 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
           All ghosts should be modeled as choosing uniformly at random from their
           legal moves.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        numGhosts = gameState.getNumAgents() - 1
+        return self.max_value(gameState, 1, numGhosts)
+
+    def max_value(self, gameState, depth, numGhosts):
+        """
+          Maxmizing function for Minimax algorithm
+        """
+        # Game over
+        if gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+        max_val = float("-inf")
+        best_action = Directions.STOP
+        for action in gameState.getLegalActions(0):
+            successor = gameState.generateSuccessor(0, action)
+            temp_val = self.expect_val(successor, depth, 1, numGhosts)
+            if temp_val > max_val:
+                max_val = temp_val
+                best_action = action
+        if depth == 1:
+            return best_action
+        else:
+            return max_val
+
+    def expect_val(self, gameState, depth, agentIndex, numGhosts):
+        """
+          Different from min layer of Minimax, we return average value of expect layer
+        """
+        if gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+        # return expectedVal
+        actions = gameState.getLegalActions(agentIndex)
+        successors = [gameState.generateSuccessor(agentIndex, action) for action in actions]
+        expectedVal = 0
+        prob = 1.0 / len(actions)
+        # last ghost agent
+        if agentIndex == numGhosts:
+            # not over, next is max pacman layer
+            if depth < self.depth:
+                for successor in successors:
+                    expectedVal += prob * self.max_value(successor, depth + 1, numGhosts)
+            # depth is over, need to stop recursion
+            else:
+                for successor in successors:
+                    expectedVal += prob * self.evaluationFunction(successor)
+        # next ghost agent
+        else:
+            for successor in successors:
+                expectedVal += prob * self.expect_val(successor, depth, agentIndex + 1, numGhosts)
+        return expectedVal
+            
+                    
 
 def betterEvaluationFunction(currentGameState):
     """
