@@ -221,32 +221,34 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
             return max_val
 
     def min_value(self, gameState, depth, agentIndex, numGhosts, alpha, beta):
-    """
-      Minimizing function with alpha pruning
-    """
-    # Game over
-    if gameState.isWin() or gameState.isLose():
-        return self.evaluationFunction(gameState)
-    min_val = float("inf")
-    for action in gameState.getLegalActions(agentIndex):
-        successor = gameState.generateSuccessor(agentIndex, action)
-        # last ghost agent
-        if agentIndex == numGhosts:
-            # depth not over, move to pacman max layer
-            if depth < self.depth:
-                tempVal = self.max_value(successor, depth + 1, numGhosts, alpha, beta)
-            # depth over, return evaluation value
+        """
+            Minimizing function with alpha pruning
+        """
+        # Game over
+        if gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+        min_val = float("inf")
+        for action in gameState.getLegalActions(agentIndex):
+            successor = gameState.generateSuccessor(agentIndex, action)
+            # last ghost agent
+            if agentIndex == numGhosts:
+                # depth not over, move to pacman max layer
+                if depth < self.depth:
+                    tempVal = self.max_value(successor, depth + 1, numGhosts, alpha, beta)
+                # depth over, return evaluation value
+                else:
+                    tempVal = self.evaluationFunction(successor)
+            # next ghost min layer
             else:
-                tempVal = self.evaluationFunction(successor)
-        # next ghost min layer
-        else:
-            tempVal = self.min_value(successor, depth, agentIndex + 1, numGhosts, alpha, beta)
-        if tempVal < alpha:
-            min_val = tempVal        # pruning
-        if min_val < alpha:
-            return min_val
-        beta = min(beta, min_val)
-    return min_val
+                tempVal = self.min_value(successor, depth, agentIndex + 1, numGhosts, alpha, beta)
+            if tempVal < min_val:
+                min_val = tempVal        
+
+            # pruning
+            if min_val < alpha:
+                return min_val
+            beta = min(beta, min_val)
+        return min_val
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
