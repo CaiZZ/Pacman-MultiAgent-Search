@@ -217,4 +217,4 @@ class ApproximateQAgent(PacmanQAgent):
             print "Training episodes : {0}".format(self.numTraining)
             print "=======Feature Weights======="
             for i in features:
-              print "{0} : {1}".format(i, self.weights[i])
+                print "{0} : {1}".format(i, self.weights[i])
